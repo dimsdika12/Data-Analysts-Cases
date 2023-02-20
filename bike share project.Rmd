@@ -1,0 +1,100 @@
+---
+title: "Bike_Share_Project"
+author: "Dragi12"
+date: "2023-02-16"
+output: html_document
+---
+## Clear Environment (opsional)
+```{r}
+  rm(list=ls())
+```
+
+## Install Packages
+```{r}
+options(repos = "http://cran.rstudio.com/")
+install.packages("tidyverse")
+install.packages("lubridate")
+install.packages("janitor")
+```
+## Install library
+```{r}
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(scales)
+library(ggplot2)
+```
+## Import dataframe(from january to june) this data downloaded from https://divvybikes.com/system-data
+    
+```{r}
+df1<- read.csv("C:\\Users\\USER\\Documents\\Data\\202201-divvy-tripdata.csv")
+df2<- read.csv("C:\\Users\\USER\\Documents\\Data\\202202-divvy-tripdata.csv")
+df3<- read.csv("C:\\Users\\USER\\Documents\\Data\\202203-divvy-tripdata.csv")
+df4<- read.csv("C:\\Users\\USER\\Documents\\Data\\202204-divvy-tripdata.csv")
+df5<- read.csv("C:\\Users\\USER\\Documents\\Data\\202205-divvy-tripdata.csv")
+df6<- read.csv("C:\\Users\\USER\\Documents\\Data\\202206-divvy-tripdata.csv")
+```
+## Combine 6 data frame to one data frame
+```{r}
+bike_rides <- rbind(df1,df2,df3,df4,df5,df6)
+dim(bike_rides)
+```
+## Remove/Cleaning empty data (NULL)
+```{r}
+bike_rides <- janitor::remove_empty(bike_rides,which = c("cols"))
+bike_rides <- janitor::remove_empty(bike_rides,which = c("rows"))
+dim(bike_rides)
+```
+## change format data to date time
+```{r}
+bike_rides$Ymd <- as.Date(bike_rides$started_at)
+bike_rides$started_at <- lubridate::ymd_hms(bike_rides$started_at)
+bike_rides$ended_at <- lubridate::ymd_hms(bike_rides$ended_at)
+```
+## Create new column for hour
+```{r}
+bike_rides$start_hour <- lubridate::hour(bike_rides$started_at)
+bike_rides$end_hour <- lubridate::hour(bike_rides$ended_at)
+```
+## Create new column for duration
+```{r}
+bike_rides$Hours <- difftime(bike_rides$ended_at, bike_rides$started_at, units = "hours")
+bike_rides$mins <- difftime(bike_rides$ended_at,bike_rides$started_at,units = "mins")
+```
+## Create new data frame, filter duration > 0
+```{r}
+df <- bike_rides %>% filter(Hours>0)
+dim(df)
+```
+## Remove rows contains NA
+```{r}
+df <- df %>% drop_na()
+dim(df)
+```
+## Select column (drop some column don't need)
+```{r}
+df <- df %>% select(-ride_id,-end_station_id,-end_station_name)
+```
+## Create plot number bike by hour for previous 6 month
+```{r}
+bike_rides %>% count(start_hour,sort = T) %>% ggplot() +
+  geom_line(aes(x=start_hour,y=n))+
+  scale_y_continuous(labels = comma) + 
+  labs(title ="Garph count of number bike ride by hour(Previous 6 month) ", x = "Hours",y = "number of bike")
+```
+
+
+
+
+### Change log
+1. Import previous 6 data from divvybike
+2. Combine data to one data frame
+3. Clean empty data (NUll)
+  Total rows : 2278732
+4. Change fromat date n add new column
+5. Remove data with negative trip duration
+  Total rows : 2278559 
+6. Remove rows contains (NA)
+  Total rows : 2276036
+7.Drop some column
+8.Plot graph
